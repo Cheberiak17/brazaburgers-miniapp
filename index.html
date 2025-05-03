@@ -2,19 +2,19 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
-  <title>Braza Burgers MiniApp</title>
+  <title>Braza Burgers</title>
   <style>
     body { font-family: Arial, sans-serif; padding: 20px; }
     .menu { display: flex; flex-wrap: wrap; gap: 20px; }
     .item { border: 1px solid #ccc; padding: 10px; width: 200px; }
     .item img { width: 100%; height: 120px; object-fit: cover; }
-    .cart { position: fixed; top: 20px; right: 20px; border: 1px solid #333; padding: 10px; }
-    button { padding: 10px 20px; margin-top: 10px; }
+    .cart { position: fixed; top: 20px; right: 20px; border: 1px solid #333; padding: 10px; background: #fff; }
+    button { padding: 10px 20px; margin-top: 10px; cursor: pointer; }
   </style>
 </head>
 <body>
 
-  <h1>Braza Burgers</h1>
+  <h1>🍔 Braza Burgers</h1>
   <div class="menu" id="menu"></div>
 
   <div class="cart" id="cart">
@@ -26,7 +26,36 @@
   </div>
 
   <script>
-    const MENU = [ /* сюда можешь вставить JSON-меню из нашего предыдущего сообщения */ ];
+    const MENU = [
+      {
+        category: "Бургеры",
+        items: [
+          {
+            name: "Классик Бургер",
+            price: 350,
+            description: "Говядина, сыр, салат, соус",
+            photo_url: "https://brazaburgers.ru/img/menu/burger1.jpg"
+          },
+          {
+            name: "Чизбургер",
+            price: 390,
+            description: "Говядина, два сыра, маринованный огурец",
+            photo_url: "https://brazaburgers.ru/img/menu/burger2.jpg"
+          }
+        ]
+      },
+      {
+        category: "Картошка",
+        items: [
+          {
+            name: "Картофель Фри",
+            price: 150,
+            description: "Хрустящий фри",
+            photo_url: "https://brazaburgers.ru/img/menu/fries.jpg"
+          }
+        ]
+      }
+    ];
 
     const menuEl = document.getElementById('menu');
     const cartItemsEl = document.getElementById('cart-items');
@@ -42,7 +71,7 @@
           div.className = 'item';
           div.innerHTML = `
             <img src="${item.photo_url || 'https://via.placeholder.com/200x120'}" alt="">
-            <h4>${item.name} — ${item.price}</h4>
+            <h4>${item.name} — ${item.price}₽</h4>
             <p>${item.description || ''}</p>
             <button data-name="${item.name}" data-price="${parseInt(item.price)}">Добавить</button>
           `;
@@ -61,9 +90,9 @@
       });
       totalEl.textContent = total;
       if (total >= 1000) {
-        deliveryNoteEl.textContent = 'Доставка бесплатна!';
+        deliveryNoteEl.textContent = '✅ Бесплатная доставка!';
       } else {
-        deliveryNoteEl.textContent = `Доставка платная (1000₽−${total}₽ ⇒ доп. ${1000 - total}₽)`;
+        deliveryNoteEl.textContent = `До бесплатной доставки не хватает: ${1000 - total}₽`;
       }
     }
 
@@ -77,16 +106,17 @@
     });
 
     document.getElementById('checkout').onclick = () => {
+      const total = cart.reduce((sum, i) => sum + i.price, 0);
       const payload = {
         items: cart,
-        total: +totalEl.textContent,
-        freeDelivery: totalEl.textContent >= 1000
+        total: total,
+        deliveryFree: total >= 1000
       };
-      // открываем Web App Telegram:
-      if (window.Telegram.WebApp) {
-        window.Telegram.WebApp.sendData(JSON.stringify(payload));
+
+      if (window.Telegram?.WebApp) {
+        Telegram.WebApp.sendData(JSON.stringify(payload));
       } else {
-        alert('Это не Web App. Проверь, запущено ли через Telegram.');
+        alert("Это мини-приложение работает только внутри Telegram WebApp.");
       }
     };
 
