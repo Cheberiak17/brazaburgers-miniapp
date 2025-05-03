@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Braza Burgers</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; }
+    .menu { display: flex; flex-wrap: wrap; gap: 20px; }
+    .item { border: 1px solid #ccc; padding: 10px; width: 200px; }
+    .item img { width: 100%; height: 120px; object-fit: cover; }
+    .cart { position: fixed; top: 20px; right: 20px; border: 1px solid #333; padding: 10px; background: #fff; }
+    button { padding: 10px 20px; margin-top: 10px; cursor: pointer; }
+  </style>
+</head>
+<body>
+
+  <h1>🍔 Braza Burgers</h1>
+  <div class="menu" id="menu"></div>
+
+  <div class="cart" id="cart">
+    <h3>Корзина</h3>
+    <div id="cart-items"></div>
+    <div>Итого: <span id="total">0</span> ₽</div>
+    <div id="delivery-note" style="color: green; margin-top: 5px;"></div>
+    <button id="checkout">Оформить заказ</button>
+  </div>
+
+  <script>
+    const MENU = [
+      {
+        category: "Бургеры",
+        items: [
+          {
+            name: "Классик Бургер",
+            price: 350,
+            description: "Говядина, сыр, салат, соус",
+            photo_url: "https://brazaburgers.ru/img/menu/burger1.jpg"
+          },
+          {
+            name: "Чизбургер",
+            price: 390,
+            description: "Говядина, два сыра, маринованный огурец",
+            photo_url: "https://brazaburgers.ru/img/menu/burger2.jpg"
+          }
+        ]
+      },
+      {
+        category: "Картошка",
+        items: [
+          {
+            name: "Картофель Фри",
+            price: 150,
+            description: "Хрустящий фри",
+            photo_url: "https://brazaburgers.ru/img/menu/fries.jpg"
+          }
+        ]
+      }
+    ];
+
+    const menuEl = document.getElementById('menu');
+    const cartItemsEl = document.getElementById('cart-items');
+    const totalEl = document.getElementById('total');
+    const deliveryNoteEl = document.getElementById('delivery-note');
+
+    let cart = [];
+
+    function renderMenu() {
+      MENU.forEach(cat => {
+        cat.items.forEach(item => {
+          const div = document.createElement('div');
+          div.className = 'item';
+          div.innerHTML = `
+            <img src="${item.photo_url || 'https://via.placeholder.com/200x120'}" alt="">
+            <h4>${item.name} — ${item.price}₽</h4>
+            <p>${item.description || ''}</p>
+            <button data-name="${item.name}" data-price="${parseInt(item.price)}">Добавить</button>
+          `;
+          menuEl.append(div);
+        });
+      });
+    }
+
+    function updateCart() {
+      cartItemsEl.innerHTML = '';
+      const total = cart.reduce((sum, i) => sum + i.price, 0);
+      cart.forEach(i => {
+        const div = document.createElement('div');
+        div.textContent = `${i.name} — ${i.price}₽`;
+        cartItemsEl.append(div);
+      });
+      totalEl.textContent = total;
+      if (total >= 1000) {
+        deliveryNoteEl.textContent = '✅ Бесплатная доставка!';
+      } else {
+        deliveryNoteEl.textContent = `До бесплатной доставки не хватает: ${1000 - total}₽`;
+      }
+    }
+
+    menuEl.addEventListener('click', e => {
+      if (e.target.tagName === 'BUTTON') {
+        const name = e.target.dataset.name;
+        const price = +e.target.dataset.price;
+        cart.push({ name, price });
+        updateCart();
+      }
+    });
+
+    document.getElementById('checkout').onclick = () => {
+      const total = cart.reduce((sum, i) => sum + i.price, 0);
+      const payload = {
+        items: cart,
+        total: total,
+        deliveryFree: total >= 1000
+      };
+
+      if (window.Telegram?.WebApp) {
+        Telegram.WebApp.sendData(JSON.stringify(payload));
+      } else {
+        alert("Это мини-приложение работает только внутри Telegram WebApp.");
+      }
+    };
+
+    renderMenu();
+    updateCart();
+  </script>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+</body>
+</html>
